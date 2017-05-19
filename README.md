@@ -1,5 +1,7 @@
 # DMProject2017
 
+NOTE: Create your own copy of R file and work on it. This will help avoid the conflicts. At the end, we'll merge them up i na master file.
+
 Tasks: 
 
 - Data cleaning. (Done, see if there's any more need for it). filtered_data.csv is the filtered data, original.csv is the original data file. 
