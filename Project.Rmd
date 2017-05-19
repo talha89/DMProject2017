@@ -1,0 +1,181 @@
+---
+title: "Project"
+author: "Talha Mahin Mir"
+date: "May 15, 2017"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Cleaning
+
+
+```{r}
+
+mushrooms = read.csv("C:/Users/Talha Mir/Desktop/Course Slides/Semester 2/Data Mining/Project/mushrooms.csv")
+nrow(mushrooms)
+ncol(mushrooms)
+str(mushrooms)
+sum(is.na(mushrooms))
+
+```
+
+Origina data has x rows and y features and no NA values. Analyzing the indivvidual features we can see that veil.type has only 1 level, so it's not essential in analyzing the problem. Dropped it. 
+
+```{r}
+mushrooms$veil.type<-NULL
+```
+
+Also stalk.root  has some missing values "?". Removing rows with missing values as well, as in this case imputing missing values can be fatal. 
+
+```{r}
+mushrooms <- mushrooms[-which(mushrooms$stalk.root == "?"), ]
+```
+
+
+Final data set has x rows and y columns. 
+
+```{r}
+nrow(mushrooms)
+ncol(mushrooms)
+```
+
+
+
+## Application of various algorithms and identification of important features
+
+### Data Splitting
+
+Typical 80-20 split
+
+```{r}
+sample <- sample.int(nrow(mushrooms), floor(.80*nrow(mushrooms)), replace = F)
+mushroomsDatatrain <- mushrooms[sample, ]
+mushroomsDatatest <- mushrooms[-sample, ]
+```
+
+
+### ID3 
+
+As ID3 starts with identifying the features that has high information gain, so we thought this would help identify the most prominent features for classiying the mushrooms.
+
+```{r}
+library(RWeka)
+library(partykit)
+
+fit <- J48(class~., data=mushroomsDatatrain)
+predictions <- predict(fit, mushroomsDatatest)
+
+testDataValues = as.numeric(mushroomsDatatest$class)-1
+predictedValues = as.numeric(predictions)-1
+
+id3Precision <- sum(predictedValues & testDataValues) / sum(predictedValues)
+id3Recall <- sum(predictedValues & testDataValues) / sum(testDataValues)
+
+id3Precision
+id3Recall
+```
+
+Precision and recall values are 1. Awesome!
+
+visualization of the obtained tree:
+
+```{r}
+#plot(as.party(fit))
+# Don't know why this stupid function is not working in RMarkdown, including pic below
+```
+
+![](./id3 graph.png)
+
+We can see that odor and spore color are most important features.
+
+To further confirm it, we printed out information gain for all the features:
+
+```{r}
+InfoGainAttributeEval(class ~ . , data = mushroomsDatatrain)
+```
+
+Odor has the highest score: 0.906074977
+
+Illustration of the relationships between 'class' and 'odor':
+
+```{r}
+library(ggplot2)
+p <- ggplot(mushroomsDatatrain, aes(x=class,y=odor,color=class), alpha=0.3) + geom_jitter()
+p
+```
+
+Description on it later. 
+
+
+The second most valuable feature is spore.print.color. Illustration:
+
+
+```{r}
+p <- ggplot(mushroomsDatatrain, aes(x=class,y=spore.print.color, color=class), alpha=0.3) + geom_jitter()
+p
+```
+
+Description later.
+
+
+To compare the performance and further confirm our results we used a couple of other techniques we learn during the course.
+
+
+## Random Forest
+
+
+```{r}
+library("ROCR")
+library(randomForest)
+
+mushrooms_randomForest <- randomForest(class~., data=mushroomsDatatrain)
+
+predictions <- predict(mushrooms_randomForest, mushroomsDatatest)
+
+testDataValues = as.numeric(mushroomsDatatest$class)-1
+predictedValues = as.numeric(predictions)-1
+
+rFPrecision <- sum(predictedValues & testDataValues) / sum(predictedValues)
+rFRecall <- sum(predictedValues & testDataValues) / sum(testDataValues)
+
+rFPrecision
+rFRecall
+```
+
+Precision and recall values are 1 again. 
+
+Variable importance chart from RF:
+
+```{r}
+dataimp <- varImpPlot(mushrooms_randomForest, main = "Importance of each variable")
+```
+
+Description later.
+
+
+## Naive Bayes
+
+```{r}
+library(e1071)
+mushroom_naive_bayes = naiveBayes(class~., data=mushroomsDatatrain)
+predictions <- predict(mushroom_naive_bayes, mushroomsDatatest)
+
+predictions <- predict(mushroom_naive_bayes, mushroomsDatatest)
+
+testDataValues = as.numeric(mushroomsDatatest$class)-1
+predictedValues = as.numeric(predictions)-1
+
+nBPrecision <- sum(predictedValues & testDataValues) / sum(predictedValues)
+nBRecall <- sum(predictedValues & testDataValues) / sum(testDataValues)
+
+nBPrecision
+nBRecall
+```
+
+In this case precision and recall are a bit less than 100%. 
+
+
