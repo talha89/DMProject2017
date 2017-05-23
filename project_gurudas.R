@@ -39,3 +39,22 @@ print(goodnessTable/5)
 
 #PCA
 
+
+##plotting expert locations on map of the world
+
+library("ggmap")
+library(maptools)
+library(maps)
+
+uniqueCountries = unique(jobsData$expert_locality)
+geocodeCountries <- geocode(as.character(uniqueCountries))
+uniqueCountries.x <- geocodeCountries$lon
+uniqueCountries.y <- geocodeCountries$lat
+
+mp <- NULL
+mapWorld <- borders("world", colour="cornsilk", fill="cornsilk")
+mp <- ggplot() +   mapWorld
+
+mp <- mp+ geom_point(aes(x=uniqueCountries.x, y=uniqueCountries.y) ,color="red", size=3) 
+mp
+
