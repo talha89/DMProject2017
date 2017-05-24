@@ -1,20 +1,25 @@
-jobsData = read.csv("C:/Users/Talha Mir/Desktop/Course Slides/Semester 2/Data Mining/Project/filtered_data - merged columns.csv", header = TRUE)
+
+jobsData = read.csv("C:/Users/Talha Mir/Desktop/Course Slides/Semester 2/Data Mining/Project/filtered_data - merged columns.csv",
+                    header = TRUE)
+
+jobsData$liked = as.factor(jobsData$liked)
+
+sample <- sample.int(nrow(jobsData), floor(.80*nrow(jobsData)), replace = F)
+jobsDatatrain <- jobsData[sample, ]
+jobsDatatest <- jobsData[-sample, ]
+
+
+
 head(jobsData)
 nrow(jobsData)
 ncol(jobsData)
 str(jobsData)
 
+colSums(is.na(jobsData))
 
 #jobsData = subset(jobsData, jobsData$applied==1 | jobsData$disliked == 1 | jobsData$liked == 1)
 #jobsData$disliked = as.factor(jobsData$disliked)
 #jobsData$applied = as.factor(jobsData$applied)
-
-
-jobsData$liked = as.factor(jobsData$liked)
-
-
-jobsData = jobsData[,-1:-2]
-jobsData = jobsData[,-21:-22]
 
 
 #jobsData <- data.frame(sapply(jobsData, function(x) as.numeric(as.character(x))))
@@ -25,15 +30,11 @@ jobsData = jobsData[,-21:-22]
 library("ROCR")
 library(randomForest)
 
-sample <- sample.int(nrow(jobsData), floor(.80*nrow(jobsData)), replace = F)
-jobsDatatrain <- jobsData[sample, ]
-jobsDatatest <- jobsData[-sample, ]
-
-jobs_randomForest <- randomForest(applied~., data=jobsDatatrain)
+jobs_randomForest <- randomForest(liked~., data=jobsDatatrain)
 
 predictions <- predict(jobs_randomForest, jobsDatatest)
 
-testDataValues = as.numeric(jobsDatatest$applied)-1
+testDataValues = as.numeric(jobsDatatest$liked)-1
 predictedValues = as.numeric(predictions)-1
 
 rFPrecision <- sum(predictedValues & testDataValues) / sum(predictedValues)
@@ -42,7 +43,7 @@ rFRecall <- sum(predictedValues & testDataValues) / sum(testDataValues)
 
 # NaiveBayes
 library(e1071)
-jobs_naive_bayes = naiveBayes(applied~., data=jobsDatatrain)
+jobs_naive_bayes = naiveBayes(liked~., data=jobsDatatrain)
 predictions <- predict(jobs_naive_bayes, jobsDatatest)
 
 
@@ -66,6 +67,19 @@ predictedValues = as.numeric(predictions)-1
 id3Precision <- sum(predictedValues & testDataValues) / sum(predictedValues)
 id3Recall <- sum(predictedValues & testDataValues) / sum(testDataValues)
 
+
+predictions <- predict(fit, jobsDatatest, type="prob")
+
+pred <- prediction(as.numeric(predictions[,2]), as.numeric(jobsDatatest$liked)-1)
+perf <- performance(pred,"tpr","fpr")
+
+plot(perf)
+abline(a=0, b= 1)
+
+auc <- performance(pred,"auc")
+auc <- unlist(slot(auc, "y.values"))
+
+
 #visualization of the obtained tree
 library(partykit)
 plot(as.party(fit))
@@ -82,8 +96,70 @@ p
 library(class)
 library(knncat)
 
+
 cl <- jobsDatatrain$liked
-knncat(jobsDatatrain, jobsDatatest, cl, k=3)
+knncat(jobsDatatrain, jobsDatatest, classcol=13, k=3)
+
+
+
+# 5 fold cross validation with naivebayes and id3
+
+jobsData = read.csv("C:/Users/Talha Mir/Desktop/Course Slides/Semester 2/Data Mining/Project/filtered_data - merged columns.csv",
+                    header = TRUE)
+
+jobsData$liked = as.factor(jobsData$liked)
+
+
+#Randomly shuffle the data
+jobsData<-jobsData[sample(nrow(jobsData)),]
+
+#Create 5 equally size folds
+folds <- cut(seq(1,nrow(jobsData)),breaks=5,labels=FALSE)
+
+testData <- list()
+trainData <- list()
+
+id3Precision <- list()
+naiveBayesPrecision <- list()
+
+id3Recall <- list()
+naiveBayesRecall <- list()
+
+#Perform 5 fold cross validation
+for(i in 1:5){
+  #Segment your data by fold using the which() function 
+  testIndexes <- which(folds==i,arr.ind=TRUE)
+  testData[[i]] <- jobsData[testIndexes, ]
+  trainData[[i]] <- jobsData[-testIndexes, ]
+  #Use the test and train data partitions however you desire...
+  
+  # for ID3
+  model_ID3 <- J48(liked~., data=trainData[[i]])
+  predictions <- predict(model_ID3, testData[[i]])
+  
+  testDataValues = as.numeric(testData[[i]]$liked)-1
+  predictedValues = as.numeric(predictions)-1
+  
+  id3Precision[[i]] <- sum(predictedValues & testDataValues) / sum(predictedValues)
+  id3Recall[[i]] <- sum(predictedValues & testDataValues) / sum(testDataValues)
+  
+  # for NaiveBayes
+  
+  model_naive_bayes = naiveBayes(liked~., data=trainData[[i]])
+  predictions <- predict(model_naive_bayes, testData[[i]])
+  
+  predictedValues = as.numeric(predictions)-1
+  
+  naiveBayesPrecision[[i]] <- sum(predictedValues & testDataValues) / sum(predictedValues)
+  naiveBayesRecall[[i]] <- sum(predictedValues & testDataValues) / sum(testDataValues)
+  
+}
+
+id3AvgPrecision = mean(unlist(id3Precision))
+id3AvgRecall = mean(unlist(id3Recall))
+naiveBayesAvgPrecision = mean(unlist(naiveBayesPrecision))
+naiveBayesavgRecall = mean(unlist(naiveBayesRecall))
+
 
 
 # Muti-label analysis
@@ -151,7 +227,9 @@ jobsDatatrain <- jobsData[sample, ]
 jobsDatatest <- jobsData[-sample, ]
 
 
-model <- glm(applied ~.,family=binomial(link='logit'),data=jobsDatatrain)
+model <- glm(liked ~.,family=binomial(link='logit'),data=jobsDatatest)
+
+# too many fucking variables to form an equation
 
 
 # FIM & Association rules
