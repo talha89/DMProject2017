@@ -1,7 +1,7 @@
 
 
 ## load the data
-```{r}
+
 job_data <- read.csv("C:/Users/adefisayo.akande/Documents/Personal/second semester/Data_Mining/project/new_project/DMProject2017/filtered_data - merged columns.csv", header =  TRUE )
 head(job_data)
 dim(job_data)
@@ -20,6 +20,7 @@ levels(job_data$expert_country)
 library(plyr)
 print(count(job_data, 'expert_country'))
 print(count(job_data, 'project_education'))
+print(count(job_data, 'project_title'))
 
 #convert education data to numeric
 job_data$project_education1 <- as.numeric(factor(job_data$project_education))
@@ -47,6 +48,7 @@ ggplot(job_data, aes(liked, fill = project_education) ) +
   geom_bar(position = "stack")
 
 
+# expert working location per education
 ggplot(job_data, aes(expert_work_from_home, fill = project_education) ) +
   geom_bar(position = "dodge")
 
@@ -58,29 +60,89 @@ ggplot(job_data, aes(expert_experience,fill = project_education) ) +
 ggplot(job_data, aes(project_experience, fill = expert_work_from_home) ) +
   geom_bar()
 
+
+#project experince vs expertise and shows project lanaguage language
+library(ggplot2)
+expert_experience
+ ggplot(job_data, aes(x=project_experience, y=expert_experience, fill=project_lang)) + 
+  geom_violin()
+
+
+ qplot(expert_experience, data = job_data, geom = "density",
+       color = expert_work_from_home, linetype = expert_work_from_home)
+ 
+ 
+ qplot(expert_experience, data = job_data, geom = "density",
+       color = expert_work_from_home, size = 0.3)
+ 
+ 
+ 
+#most spoken langauge
+ggplot(job_data) +
+  geom_bar( aes(expert_country, fill = project_lang) )
+
+ggplot(job_data) +
+  geom_bar( aes(project_country, fill = project_education) ) 
+
+#expert project experince and langauge
+ggplot(job_data, aes(project_experience, fill = project_lang) ) +
+  geom_bar(position = "dodge")
+
+
 #Expert years of expereince and work location
 # library(plotly)
 # library(ggplot2)
-ggplotly(x)
+#ggplotly(x)
 
 ggplot(job_data, aes(expert_experience, fill = expert_work_from_home) ) +
   geom_bar()
 
-
-qqnorm(job_data$expert_experience) 
-+  qqline(job_data$project_experience)
-
+#QQ plot of project experince
 qqnorm(job_data$project_experience) 
+ + qqline(job_data$project_experience)
 
-
-#countries and working location
+#countries and working location 
  ggplot(job_data, aes(expert_country, fill = expert_work_from_home) ) +
   geom_bar() 
  
- library(devtools)
- install_github('hadley/ggplot2')
 
-#Project experince vs expert experince
+ ##plotting project country locations on map of the world
+ 
+ library(ggmap)
+ library(maptools)
+ library(maps)
+ 
+ uniqueCountries = unique(job_data$project_country)
+ geocodeCountries <- geocode(as.character(uniqueCountries))
+ uniqueCountries.x <- geocodeCountries$lon
+ uniqueCountries.y <- geocodeCountries$lat
+ 
+ mp <- NULL
+ mapWorld <- borders("world", colour="cornsilk", fill="cornsilk")
+ mp <- ggplot() +   mapWorld
+ 
+ mp <- mp+ geom_point(aes(x=uniqueCountries.x, y=uniqueCountries.y) ,color="red", size=1) 
+ mp
+ 
+ #############
+ 
+ uniqueprojecte = unique(job_data$project_experience)
+ geocodeCountries <- geocode(as.character(uniqueCountries))
+ uniqueCountries.x <- geocodeCountries$lon
+ uniqueCountries.y <- geocodeCountries$lat
+ 
+ mp <- NULL
+ mapWorld <- borders("world", colour="cornsilk", fill="cornsilk")
+ mp <- ggplot() +   mapWorld
+ 
+ mp <- mp+ geom_point(aes(x=uniqueCountries.x, y=uniqueCountries.y) ,color="red", size=1) 
+ mp
+ 
+##########################################
+ 
+ 
+
+#Project experince vs expert experince. No coreelation betwwen project experince and expert experince 
 plot(job_data$project_experience,job_data$expert_experience )
 abline(lm(job_data$project_experience ~ job_data$expert_experience))
 
@@ -89,57 +151,33 @@ plot(job_data$expert_experience,job_data$project_experience )
 abline(lm( job_data$project_experience~job_data$expert_experience , data= ))
 
 
-set.seed(2)
-par(mfrow=c(2,2))
-mod_1 <- lm(mpg ~ disp, data=mtcars)
-
-> set.seed(2) # for example reproducibility
-> par(mfrow=c(2,2)) # set 2 rows and 2 column plot layout
-> mod_1 <- lm(mpg ~ disp, data=mtcars) # linear model 
-> plot(mod_1) 
-
-
 #Expert experince amongst the various countries 
-plot(job_data$expert_country,job_data$expert_experience )
+plot(job_data$expert_country,job_data$expert_experience,  ylab = "Experince" )
 
 # Project langauge and exper experince
 plot(job_data$project_lang,job_data$expert_experience, xlab = "Language", ylab = "Expert Experince" )
 
 
-#project experince distribution
+#project experince distribution. decline in number of expert with long project experienced 
 ggplot(job_data, aes(project_experience) ) +
   geom_bar()
 
 
-#project experince density plot
+#project experince density plot # more experinced expert are between 10 and 15 years of experince 
 ggplot(job_data, aes(expert_experience)) +
   geom_density()
 
 
 #box plot
-ggplot(job_data,
-       aes(expert_work_from_home, project_education1 )) +
-  geom_point() + geom_boxplot()
 
 plot(job_data$project_education1~job_data$expert_work_from_home, xlab= "expert_work_from_home" ,ylab="project_education1" , main="boxplot")
 
 #disribution count per country
-plot(job_data$expert_country, , xlab= "expert_country", ylab= " ", main= "Distribution")
-
-
-#most spoken langauge
-ggplot(job_data) +
-  geom_bar( aes(expert_country, fill = project_lang) )
-
-ggplot(job_data) +
-  geom_bar( aes(project_country, fill = project_education) ) 
+plot(job_data$expert_country, , xlab= "expert_country", ylab= "count ", main= "Distribution")
 
 ################################################################
 
 #ggplot(job_data,aes(job_data$expert_province,job_data$expert_experience ))
-
-ggplot(job_data, aes(expert_experience,expert_country, fill = expert_country))
-
 
 plot(job_data$applied,job_data$liked )
 
@@ -150,49 +188,15 @@ plot(job_data$project_education,job_data$expert_work_from_home)
 
 
 
-plot(job_data$expert_experience, job_data$expert_education1)
-
-barplot(as.matrix(job_data$expert_country), main="Autos", ylab= "Total",
-        beside=TRUE, col=rainbow(5))
-
-
-plot(job_data$expert_experience, job_data$expert_country, xlab= "expert_experience" , ylab= "expert_country", main= "Boxplot")
-
-
-expert_experience
-
-
-# using PCA to reduce the observed variables into a smaller number of principal components that will account for most of the variance in the observed variables.
-
-```
-
-
-
-From our dataset, there so many factors. 
-
-
-```{r}
-par(mfrow=c(1,1))
-library(ggplot2)
-
-ggplot(job_data, aes(expert_country,expert_title, colour = project_education)) +
-  geom_point()+ geom_line() 
-
-
-plot(expert_country,project_education , data =job_data)
-
-ggplot(job_data, aes(expert_country,project_education, colour = project_education)) +
-  geom_point()+ geom_line() 
-
-
-ggplot(job_data, aes(expert_title,liked, colour = expert_country)) +
-  geom_point()+ geom_line() 
 
 
 
 
-ggplot(job_data, aes(project_education,liked)) +
-  geom_point()+ geom_line() 
+
+
+
+
+
 
 
 
